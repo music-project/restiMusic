@@ -41,5 +41,11 @@ nosetests.xml
 # Environment files
 .env
 .env-mysql
+
+
 #IDE
 .idea
+
+#virtual enviroument
+venv
+
