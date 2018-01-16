@@ -1,15 +1,60 @@
 # -*- coding=UTF-8 -*-
 
+import os, json
 from flask import Flask
 from flask import request
-import json
+from flask_script import Manager
+from flask_sqlalchemy import SQLAlchemy
+
 
 from spider.qqmusic import _search
 from spider.qqmusic import _songdetail
 from spider.qqmusic import _albumdetail
 
-app = Flask(__name__)
+basedir = os.path.abspath(os.path.dirname(__file__))
 
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+db = SQLAlchemy(app)
+manager = Manager(app)
+
+class Music(db.Model):
+    __tablename__   = 'music_info'
+    music_id        = db.Column(db.String(20), primary_key=True)    #歌曲ID
+    album_id        = db.Column(db.String(20))                      #歌曲所在专辑ID
+    style           = db.Column(db.String(50))                      #歌曲流派
+    year            = db.Column(db.Date)                            #歌曲年代
+    singer          = db.Column(db.String(20))                      #歌手
+    language        = db.Column(db.String(20))                      #语种
+
+    def __repr__(self):
+        return '<Music %r>' % self.music_id
+
+
+class Comment(db.Model):
+    __tablename__   = 'comment_list'
+    comment_id      = db.Column(db.String(20), primary_key=True)    #评论ID
+    commened_id     = db.Column(db.String(20))                      #被评论人ID
+    commening_id    = db.Column(db.String(20))                      #评论人ID
+    time            = db.Column(db.DateTime)                        #评论时间
+    comment_info    = db.Column(db.String(512))                     #评论内容
+
+    def __repr__(self):
+        return '<Comment %r>' % self.comment_id
+
+class User(db.Model):
+    __tablename__   = 'user_info'
+    user_id         = db.Column(db.String(20), primary_key=True)
+    username        = db.Column(db.String(20))                      #被评论人ID
+    password        = db.Column(db.String(40))                      #评论人ID
+    follower_num    = db.Column(db.Integer)                        #评论时间
+    follower_list   = db.Column(db.String(1024))                     #评论内容
+    followed_num    = db.Column(db.Integer)
+    followed_list   = db.Column(db.String(1024))
+
+    def __repr__(self):
+        return '<User %r>' % self.user_id
 
 @app.route('/test/test11/', methods=['GET'])
 def test():
@@ -118,4 +163,5 @@ def albumdetail():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    manager.run()
+    # app.run(debug=True)
