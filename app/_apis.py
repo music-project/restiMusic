@@ -41,6 +41,20 @@ def searchsong():
                 song.pop(word)
         return str(val)
 
+@app.route('/api/play/', methods=['POST'])
+def getm4a():
+    """
+    :function:  getm4a
+    :args:      none
+    :rv         the link to song`s m4a
+
+    根据歌曲ID返回m4a播放链接
+    """
+    id = request.args.get('id')
+    print id
+    return 'http://ws.stream.qqmusic.qq.com/C100' + id + '.m4a?fromtag=38'
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+    getm4a('just test')

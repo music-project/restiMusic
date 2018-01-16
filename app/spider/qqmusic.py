@@ -9,6 +9,9 @@ def search(page, word):
     text = r.content[9:-1]
     return text
 
-#
+
+
+
 # if __name__ == '__main__':
+#     play('000Md1wq0vnwzE')
 #     search('1', '一生有你')
