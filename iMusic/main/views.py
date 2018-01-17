@@ -33,9 +33,9 @@ def register():
         encode_password = base64.b64encode(username + ':' + password)
 
         #查询该用户名是否已经存在
-        has_user = User.query.filter_by(username=username).first()
-        print has_user
-        if has_user is None:
+        user = User.query.filter_by(username=username).first()
+        print user
+        if user is None:
             new = User(username=username, password=encode_password, follower_num=0, follower_list='[]', followed_num=0,
                        followed_list='[]')
             #添加新用户

@@ -55,4 +55,4 @@ venv
 #data file
 .dat
 .csv
-
+migrations
