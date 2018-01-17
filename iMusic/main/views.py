@@ -13,16 +13,35 @@ import json, base64
 from ..models import User, Upload, Collect
 from itsdangerous import URLSafeSerializer as Serializer
 
+@api.route('/following/music/', methods=['GET'])
+def following_music():
+    if request.method == 'GET':
+        # rv =
+        return 'test'
+
 @api.route('/login/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # user = User.query.filter_by(email=form.email.data).first()
-        # if user is not None and user.verify_password(form.password.data) and \
-        #         user.is_administrator():
-        #     login_user(user)
-        #     return redirect(url_for('admin.index'))
-    # return
-        pass
+        rv = {}
+        token = request.headers.get('token')
+        username, password = base64.b64decode(token).split(':')
+        print username
+        print password
+
+        #查询是否有该用户
+        user = User.query.filter_by(username=username).first()
+        print user
+        if user is None:
+            rv['state'] = 401
+        else:       #查询密码是否正确
+            dbpassword = User.query.filter_by(username=username).first().password
+            print dbpassword
+            if dbpassword == token:
+                rv['state'] = 200
+            else:
+                rv['state'] = 403
+    rv['token'] = token
+    return json.dumps(rv)
 
 @api.route('/user/', methods=['POST'])
 def register():
