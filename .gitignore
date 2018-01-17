@@ -1,3 +1,6 @@
+#sqliteadmin
+sqliteadmin
+
 *.py[cod]
 
 # C extensions
@@ -48,4 +51,8 @@ nosetests.xml
 
 #virtual enviroument
 venv
+
+#data file
+.dat
+.csv
 
