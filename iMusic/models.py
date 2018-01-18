@@ -1,13 +1,13 @@
 # -*- coding=UTF-8 -*-
-import os
+import os, datetime
 from . import db
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Music(db.Model):
     __tablename__   = 'music_info'
-    id             = db.Column(db.Integer, primary_key=True, index=True, autoincrement=True)        #数据库id
-    music_id        = db.Column(db.String(20))   #歌曲mID
+    id              = db.Column(db.Integer, primary_key=True, index=True, autoincrement=True)        #数据库id
+    music_id        = db.Column(db.String(20))                      #歌曲mID
     album_id        = db.Column(db.String(20))                      #歌曲所在专辑ID
     name            = db.Column(db.String(20))                      #歌曲名字
     style           = db.Column(db.String(50))                      #歌曲流派
@@ -23,7 +23,7 @@ class Comment(db.Model):
     id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
     commened_id     = db.Column(db.String(20), nullable=False)                      #被评论歌曲ID
     commening_id    = db.Column(db.String(20), nullable=False, index=True)          #评论人ID
-    time            = db.Column(db.String(40), nullable=False)                        #评论时间
+    time            = db.Column(db.DateTime, nullable=False)                        #评论时间
     comment_info    = db.Column(db.String(512))                                     #评论内容
 
     def __repr__(self):
@@ -41,19 +41,23 @@ class User(db.Model):
                                                    '4-14e705ce-fc6d-11e7-8203-bbd045c6a3bb.jpg')
     bio             = db.Column(db.String(200), default='intro yourself')         #用户介绍
     follower_num    = db.Column(db.Integer)                                          #关注数
-    follower_list   = db.Column(db.String(2048))                                    #关注列表
     followed_num    = db.Column(db.Integer)                                         #粉丝数
-    followed_list   = db.Column(db.String(2048))                                    #粉丝列表
+
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer, db.ForeignKey('user_info.id'), primary_key=True)    #关注者
+    followed_id = db.Column(db.Integer, db.ForeignKey('user_info.id'), primary_key=True)    #被关注者
+
 
     def __repr__(self):
         return '<User %r>' % self.id
 
 class Upload(db.Model):
     __tablename__   = 'upload_info'
-    id             = db.Column(db.Integer, primary_key=True, index=True)            #数据库id
-    uuid            = db.Column(db.Integer, nullable=False)                      #上传者用户ID
+    id              = db.Column(db.Integer, primary_key=True, index=True)            #数据库id
+    uuid            = db.Column(db.Integer, nullable=False)                         #上传者用户ID
     usid            = db.Column(db.String(20), nullable=False)                      #被上传的歌曲ID
-    utime           = db.Column(db.String(40), nullable=False)                        #上传时间
+    utime           = db.Column(db.DateTime, nullable=False)                        #上传时间
 
     def __repr__(self):
         return '<upload_id %r>' % self.id
@@ -61,9 +65,9 @@ class Upload(db.Model):
 class Collect(db.Model):
     __tablename__   = 'collect_info'
     id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
-    cuid        = db.Column(db.Integer, nullable=False)                      #收藏者用户ID
+    cuid        = db.Column(db.Integer, nullable=False)                          #收藏者用户ID
     csid        = db.Column(db.String(20), nullable=False)                      #被收藏的歌曲ID
-    ctime       = db.Column(db.String(40), nullable=False)                        #收藏时间
+    ctime       = db.Column(db.DateTime, nullable=False)                        #收藏时间
 
     def __repr__(self):
         return '<collect_info %r>' % self.id

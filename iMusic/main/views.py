@@ -10,16 +10,20 @@ from ..spider.qqmusic import _albumdetail
 from ..spider.qqmusic import _search
 from ..algorithm.recommender import recommender
 
+import codecs
 import json, base64, datetime
-from ..models import User, Upload, Collect, Comment, Music
+from ..models import User, Upload, Collect, Comment, Music, Follow
 from flask_cors import cross_origin
 
+
+def get_singer_by_songmid(songmid):
+    return  Music.query.filter_by(music_id=songmid).first().singer
 
 def Auth2(Authorization):
     state = 502
     username, uid = base64.b64decode(Authorization.split(' ')[1]).split(':')
-    print username
-    print uid
+    # print username
+    # print uid
 
     # 查询是否有该用户
     user = User.query.filter_by(username=username).first()
@@ -31,12 +35,11 @@ def Auth2(Authorization):
 
     return state
 
-
 def Auth(Authorization):
     state = 502
     username, password = base64.b64decode(Authorization.split(' ')[1]).split(':')
-    print username
-    print password
+    # print username
+    # print password
 
     # 查询是否有该用户
     user = User.query.filter_by(username=username).first()
@@ -52,22 +55,177 @@ def Auth(Authorization):
             state = 403             #密码错误
     return state
 
+@api.route('/follow/', methods=['POST'])
+@cross_origin(origin="*")
+def follow():
+    if request.method == 'POST':
+        rv = {}
+        Authorization = request.headers.get('Authorization')
+        state = Auth2(Authorization)
+        rv['state'] = state
+
+        cname = request.json.get("cname")
+        uname = request.json.get("uname")
+        #当前用户对象
+        # 被关注用户对象
+        c_user = User.query.filter_by(username=cname).first()
+        u_user = User.query.filter_by(username=uname).first()
+
+        # 计算当前用户的ID
+        # 计算被关注用户的ID
+        c_id = c_user.id
+        u_id = u_user.id
+
+        #添加关注信息
+        new_follow = Follow(follower_id=c_id, followed_id=u_id)
+        db.session.add(new_follow)
+        db.session.commit()
+
+        #当前用户的关注数加一
+        #被关注用户的被关注数加一
+        c_user.follower_num += 1
+        u_user.followed_num += 1
+        db.session.add(c_user)
+        db.session.add(u_user)
+        db.session.commit()
+
+        return json.dumps(rv)
+
+@api.route('/<mid>/like/', methods=['GET'])
+@cross_origin(origin="*")
+def like_music(mid):
+    if request.method == 'GET':
+        rv = {}
+        Authorization = request.headers.get('Authorization')
+        print "Auth" + Authorization
+        state = Auth2(Authorization)
+        rv['state'] = state
+        username, uid = base64.b64decode(Authorization.split(' ')[1]).split(':')
+        print (username, uid)
+        songmid = Music.query.filter_by(id=mid).first().music_id
+        item = Collect.query.filter_by(cuid=uid, csid=songmid).first()
+        if item is None:
+            new_like = Collect(cuid=uid, csid=songmid, ctime=datetime.datetime.now())
+            db.session.add(new_like)
+            db.session.commit()
+
+        return json.dumps(rv)
+
 @api.route('/<uid>/suggest_users/', methods=['GET'])
 @cross_origin(origin="*")
 def suggest(uid):
+    if request.method == 'GET':
+        # 歌曲评分
+        path1 = "temp_music.csv"
+        path2 = "temp_musicion.csv"
+        path3 = "temp_tag.csv"
+        f1 = codecs.open(path1, "wb", 'utf8')
+        f2 = codecs.open(path2, "wb", 'utf8')
+        f3 = codecs.open(path3, "wb", 'utf8')
 
-    path = "temp.csv"
-    with open(path, "wb") as f:
-        f.write("UserID,MusicID,Rating\n")
+        f1.write("UserID,MusicID,Rating\n")
+        f2.write("UserID,MusicID,Rating\n")
+        f1.write("UserID,TagID,Rating\n")
+
         collect = Collect.query.all()
+        upload = Upload.query.all()
+        rating = {}
         for item in collect:
-            uuid  = str(item.cuid)
+            uuid = item.cuid
             songid = item.csid
-            sstr = uuid + "," + songid + "," +  "5\n"
-            f.write(sstr)
-    rec = recommender(path)
-    # test
-    return rec.calcuteUserbyMusic(targetID=uid, TopN=4)
+            sstr = str(uuid) + "," + songid + ",5\n"
+            f1.write(sstr)
+
+            style = ""
+            year = ""
+            language = ""
+            item = Music.query.filter_by(music_id=songid).first()
+            if item is not None:
+                singer = item.singer
+                sstr2 = str(uuid) + "," + singer + ",5\n"
+                f2.write(sstr2)
+
+                style = item.style
+                year = item.year
+                language = item.language
+
+            if uuid not in rating:
+                rating[uuid] = {}
+            if year not in rating[uuid]:
+                rating[uuid][year] = 0
+            if style not in rating[uuid]:
+                rating[uuid][style] = 0
+            if language not in rating[uuid]:
+                rating[uuid][language] = 0
+            rating[uuid][style] += 3
+            rating[uuid][year] += 3
+            rating[uuid][language] += 3
+
+
+        for item in upload:
+            uuid = item.uuid
+            songid = item.usid
+            sstr = str(uuid) + "," + songid + ",5\n"
+            f1.write(sstr)
+
+
+            style = ""
+            year = ""
+            language = ""
+            item = Music.query.filter_by(music_id=songid).first()
+            if item is not None:
+                singer = item.singer
+                sstr2 = str(uuid) + "," + singer + ",5\n"
+                f2.write(sstr2)
+
+                style = item.style.decode('utf-8')
+                year = item.year.decode('utf-8')
+                language = item.language.decode('utf-8')
+
+            if uuid not in rating:
+                rating[uuid] = {}
+            if year not in rating[uuid]:
+                rating[uuid][year] = 0
+            if style not in rating[uuid]:
+                rating[uuid][style] = 0
+            if language not in rating[uuid]:
+                rating[uuid][language] = 0
+            rating[uuid][style] += 5
+            rating[uuid][year] += 5
+            rating[uuid][language] += 5
+
+        for uuid in rating:
+            for tag in rating[uuid]:
+                f3.write(str(uuid) + "," + str(tag) + "," + str(rating[uuid][tag]) + "\n")
+        f1.close()
+        f2.close()
+        f3.close()
+
+        rec1 = recommender(path1).calcuteUserbyMusic(targetID=uid, TopN=2)
+        rec2 = recommender(path2).calcuteUserbyMusic(targetID=uid, TopN=2)
+        rec3 = recommender(path3).calcuteUserbyTag(targetID=uid, TopN=2)
+
+        print rec1 + rec2 + rec3
+        return "suggest"
+
+# @api.route('/<uid>/suggest_users/', methods=['GET'])
+# @cross_origin(origin="*")
+# def suggest_user(uid):
+#     if request.method == 'GET':
+#         path = "temp.csv"
+#         with open(path, "wb") as f:
+#             f.write("UserID,MusicID,Rating\n")
+#             collect = Collect.query.all()
+#             for item in collect:
+#                 uuid  = str(item.cuid)
+#                 songid = item.csid
+#                 sstr = uuid + "," + songid + "," +  "5\n"
+#                 f.write(sstr)
+#
+#         rec = recommender(path)
+#         print rec.calcuteUserbyMusic(targetID=uid, TopN=4)
+#         return "test"
+#     # return rec.calcuteUserbyMusic(targetID=uid, TopN=4)
 
 
 @api.route('/<uid>/music/', methods=['POST'])
@@ -128,7 +286,7 @@ def upload_music(uid):
 
             #更新歌曲表
             ##根据歌曲ID查找歌曲专辑ID
-            print "songmid = " + songmid
+            # print "songmid = " + songmid
             info = eval(_songdetail(songmid))
             # with open("temp2.txt", "wb") as f:
             #     f.write(str(info))
@@ -146,6 +304,7 @@ def upload_music(uid):
                               name=music,
                               style=style,
                               year=year,
+                              singer=artist,
                               language=language)
             db.session.add(new_music)
             db.session.commit()
@@ -233,8 +392,7 @@ def register():
         user = User.query.filter_by(username=username).first()
         print(user)
         if user is None:
-            new = User(username=username, password=encode_password, follower_num=0, follower_list='[]', followed_num=0,
-                       followed_list='[]')
+            new = User(username=username, password=encode_password, follower_num=0, followed_num=0)
             #添加新用户
             db.session.add(new)
             db.session.commit()
@@ -379,10 +537,10 @@ def albumdetail():
 @api.route('/dbtest/', methods=['GET'])
 @cross_origin(orifin="*")
 def dbtest():
-    new1 = Collect(cuid="1", csid="aaa", ctime=datetime.datetime.now().__str__())
-    new2 = Collect(cuid="2", csid="bbb", ctime=datetime.datetime.now().__str__())
-    new3 = Collect(cuid="3", csid="ccc", ctime=datetime.datetime.now().__str__())
-    new4 = Collect(cuid="4", csid="ddd", ctime=datetime.datetime.now().__str__())
+    new1 = Collect(cuid="1", csid="aaa", ctime=datetime.datetime.now())
+    new2 = Collect(cuid="2", csid="bbb", ctime=datetime.datetime.now())
+    new3 = Collect(cuid="3", csid="ccc", ctime=datetime.datetime.now())
+    new4 = Collect(cuid="4", csid="ddd", ctime=datetime.datetime.now())
 
     db.session.add(new1)
     db.session.add(new2)
