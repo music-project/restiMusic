@@ -4,4 +4,10 @@ from flask_cors import cross_origin
 api = Blueprint('api', __name__)
 
 
+@api.before_request
+@cross_origin(origin="*")
+def before_request():
+    return jsonify({})
+
+
 from . import views, errors
