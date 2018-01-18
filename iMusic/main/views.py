@@ -55,6 +55,57 @@ def Auth(Authorization):
             state = 403             #密码错误
     return state
 
+@api.route('/<int:user_id>/follower/', methods=['GET'])
+@cross_origin(origin="*")
+def get_follower(user_id):
+    if request.method == 'GET':
+        rv = {}
+        Authorization = request.headers.get('Authorization')
+        state = Auth2(Authorization)
+        rv['state'] = state
+        rv['users'] = []
+        follower_list = Follow.query.filter_by(followed_id=user_id).all()
+        for item in follower_list:
+            u_id = item.follower_id
+            u_user = User.query.filter_by(id=u_id).first()
+            user_info = {}
+            user_info['id']            = u_id
+            user_info['avatar']        = u_user.avatar
+            user_info['username']      = u_user.username
+            user_info['tweets']        = list(u_user.tweets)
+            user_info['is_following'] = u_user.is_following
+            user_info['cover']         = u_user.cover
+            user_info['bio']           = u_user.bio
+            rv['users'].append(user_info)
+
+        return json.dumps(rv)
+
+
+@api.route('/<int:user_id>/following/', methods=['GET'])
+@cross_origin(origin="*")
+def get_following(user_id):
+    if request.method == 'GET':
+        rv = {}
+        Authorization = request.headers.get('Authorization')
+        state = Auth2(Authorization)
+        rv['state'] = state
+        rv['users'] = []
+        following_list = Follow.query.filter_by(follower_id=user_id).all()
+        for item in following_list:
+            u_id = item.followed_id
+            u_user = User.query.filter_by(id=u_id).first()
+            user_info = {}
+            user_info['id']            = u_id
+            user_info['avatar']        = u_user.avatar
+            user_info['username']      = u_user.username
+            user_info['tweets']        = list(u_user.tweets)
+            user_info['is_following'] = u_user.is_following
+            user_info['cover']         = u_user.cover
+            user_info['bio']           = u_user.bio
+            rv['users'].append(user_info)
+
+        return json.dumps(rv)
+
 @api.route('/follow/', methods=['POST'])
 @cross_origin(origin="*")
 def follow():
@@ -66,7 +117,7 @@ def follow():
 
         cname = request.json.get("cname")
         uname = request.json.get("uname")
-        #当前用户对象
+        # 当前用户对象
         # 被关注用户对象
         c_user = User.query.filter_by(username=cname).first()
         u_user = User.query.filter_by(username=uname).first()
