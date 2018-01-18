@@ -13,14 +13,73 @@ import json, base64
 from ..models import User, Upload, Collect
 from flask_cors import cross_origin
 
-from itsdangerous import URLSafeSerializer as Serializer
+def Auth(Authorization):
+    state = 502
+    username, password = base64.b64decode(Authorization.split(' ')[1]).split(':')
+    print username
+    print password
+
+    # 查询是否有该用户
+    user = User.query.filter_by(username=username).first()
+    print user
+    if user is None:
+        state = 401                 #未注册
+    else:  # 查询密码是否正确
+        dbpassword = User.query.filter_by(username=username).first().password
+        print dbpassword
+        if dbpassword == base64.b64encode(username + ':' + password):
+            state = 200             #密码正确
+        else:
+            state = 403             #密码错误
+    return state
+
+
+@api.route('/user/<int:id>', methods=['GET'])
+@cross_origin(origin="*")
+def get_user_info(id):
+    rv = {}
+    if request.method == 'GET':
+        Authorization = request.headers.get('Authorization')
+        state = Auth(Authorization)
+        rv['state'] = state
+        rv['user'] = {}
+
+        if state == 200:
+            user_info = User.query.filter_by(id=id).first()
+            rv['user']['avatar']        = user_info.avatar
+            rv['user']['username']      = user_info.username
+            rv['user']['tweets']        = list(user_info.tweets)
+            rv['user']['is_following'] = user_info.is_following
+            rv['user']['cover']         = user_info.cover
+            rv['user']['bio']           = user_info.bio
+
+        return json.dumps(rv)
 
 @api.route('/following/music/', methods=['GET'])
 @cross_origin(origin="*")
 def following_music():
+    rv = {}
     if request.method == 'GET':
-        # rv =
-        return 'test'
+        time = request.args.get('time')
+        Authorization = request.headers.get('Authorization')
+        state = Auth(Authorization)
+        rv['state'] = state
+        rv['list'] = []
+        songmidlist = []
+        if state != 403:
+            ## 获取当前用户关注的所有用户
+            username = base64.b64decode(Authorization.split(' ')[1]).split(':')[0]
+            follower_list = list(User.query.filter_by(username=username).first().follower_list) #关注的人
+            for uid in follower_list:
+                ##  获取所有关注用户上传的音乐
+                upload_list = Upload.query.filter_by(uuid=uid).all()
+                for up_list in upload_list:
+                    songmidlist.add(up_list.usid)
+
+            # for sid in songmidlist:
+
+
+        return json.dumps(rv)
 
 @api.route('/token/', methods=['POST'])
 @cross_origin(origin="*")
@@ -28,25 +87,15 @@ def get_token():
     if request.method == 'POST':
         rv = {}
         Authorization = request.headers.get('Authorization')
-        username, password = base64.b64decode(Authorization.split(' ')[1]).split(':')
-        print username
-        print password
+        username = base64.b64decode(Authorization.split(' ')[1]).split(':')[0]
 
-        #查询是否有该用户
-        user = User.query.filter_by(username=username).first()
-        print user
-        if user is None:
-            rv['state'] = 401
-            rv['token'] = "null"
-        else:       #查询密码是否正确
-            dbpassword = User.query.filter_by(username=username).first().password
+        rv['state'] =  Auth(Authorization)
+        token = ""
+        if rv['state'] != 401:
             uid = User.query.filter_by(username=username).first().id
-            print dbpassword
-            if dbpassword == base64.b64encode(username + ':' + password):
-                rv['state'] = 200
-            else:
-                rv['state'] = 403
-            rv['token'] = base64.b64encode(username + ':' + str(uid))
+            token = base64.b64encode(username + ':' + str(uid))
+        rv['token'] = token
+
         return json.dumps(rv)
 
 @api.route('/user/', methods=['POST'])
@@ -204,3 +253,10 @@ def albumdetail():
                 song.pop(word)
 
     return json.dumps(val)
+
+@api.route('/dbtest/', methods=['GET'])
+@cross_origin(orifin="*")
+def dbtest():
+    user = User.query.filter_by(follower_num=0).all()
+    print user[0].id
+    return 'just test'
