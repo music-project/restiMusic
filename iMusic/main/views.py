@@ -116,18 +116,18 @@ def upload_music(uid):
             albummid    = info['data'][0]['album']['mid'].decode('utf-8')
 
             ##根据专辑ID查找专辑详情
-            print(_albumdetail(albummid))
-            info = eval(_albumdetail(albummid))
+            # print(_albumdetail(albummid))
+            info = _albumdetail(albummid)
             style       = info['data']['genre']
             year        = info['data']['aDate'].decode("utf-8")
             language    = info['data']['lan']
 
-            new_music = Music(music_id=songmid.decode('utf-8'),
-                              album_id=albummid.decode('utf-8'),
+            new_music = Music(music_id=songmid,
+                              album_id=albummid,
                               name=music,
-                              style=style.decode('utf-8'),
+                              style=style,
                               year=year,
-                              language=language.decode('utf-8'))
+                              language=language)
             db.session.add(new_music)
             db.session.commit()
 

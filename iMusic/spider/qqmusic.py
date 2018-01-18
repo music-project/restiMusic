@@ -20,7 +20,8 @@ def _songdetail(songid):
 def _albumdetail(albumid):
     url = 'https://c.y.qq.com/v8/fcg-bin/fcg_v8_album_info_cp.fcg?albummid=' + albumid
     r = requests.get(url)
-    return r.content
+    # print(r.json())
+    return r.json()
 
 
 # if __name__ == '__main__':
