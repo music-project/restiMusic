@@ -21,13 +21,13 @@ def following_music():
         # rv =
         return 'test'
 
-@api.route('/login/', methods=['GET', 'POST'])
+@api.route('/token/', methods=['POST'])
 @cross_origin(origin="*")
-def login():
+def get_token():
     if request.method == 'POST':
         rv = {}
-        token = request.headers.get('token')
-        username, password = base64.b64decode(token).split(':')
+        Authorization = request.headers.get('Authorization')
+        username, password = base64.b64decode(Authorization.split(' ')[1]).split(':')
         print username
         print password
 
@@ -36,15 +36,17 @@ def login():
         print user
         if user is None:
             rv['state'] = 401
+            rv['token'] = "null"
         else:       #查询密码是否正确
             dbpassword = User.query.filter_by(username=username).first().password
+            uid = User.query.filter_by(username=username).first().id
             print dbpassword
-            if dbpassword == token:
+            if dbpassword == base64.b64encode(username + ':' + password):
                 rv['state'] = 200
             else:
                 rv['state'] = 403
-    rv['token'] = token
-    return json.dumps(rv)
+            rv['token'] = base64.b64encode(username + ':' + str(uid))
+        return json.dumps(rv)
 
 @api.route('/user/', methods=['POST'])
 @cross_origin(origin="*")
