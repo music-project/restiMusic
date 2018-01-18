@@ -109,7 +109,7 @@ def get_index(user_id):
         # 获取自己上传的音乐列表
         upload_list = Upload.query.filter_by(uuid=user_id).all()
         rv['musics'] += get_song_list(upload_list)
-
+        rv['tweets_cnt'] = len(upload_list)
         # 获取自己关注的所有用户
         following_list = Follow.query.filter_by(follower_id=user_id).all()
         for follow in following_list:
