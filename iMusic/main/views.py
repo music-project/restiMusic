@@ -13,6 +13,24 @@ import json, base64, datetime
 from ..models import User, Upload, Collect, Comment, Music
 from flask_cors import cross_origin
 
+
+def Auth2(Authorization):
+    state = 502
+    username, uid = base64.b64decode(Authorization.split(' ')[1]).split(':')
+    print username
+    print uid
+
+    # 查询是否有该用户
+    user = User.query.filter_by(username=username).first()
+    print user
+    if user is None:
+        state = 401                 #未注册
+    else:  # 查询密码是否正确
+        state = 200             #密码错误
+
+    return state
+
+
 def Auth(Authorization):
     state = 502
     username, password = base64.b64decode(Authorization.split(' ')[1]).split(':')
@@ -40,7 +58,7 @@ def upload_music(uid):
     if request.method == 'POST':
         #身份验证
         Authorization = request.headers.get('Authorization')
-        state = Auth(Authorization)
+        state = Auth2(Authorization)
         music = request.args.get('music')
         artist = request.args.get('artist')
 
