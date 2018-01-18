@@ -16,6 +16,47 @@ from ..models import User, Upload, Collect, Comment, Music, Follow
 from flask_cors import cross_origin
 
 
+def get_song_list(upload_list):
+    songlist = []
+    for item in upload_list:
+        song = {}
+        #上传表中的信息
+        song['timestamp'] = item.utime.__str__()
+        song['url'] = 'http://ws.stream.qqmusic.qq.com/C100' + item.usid + '.m4a?fromtag=38'
+
+        #歌曲表中的信息
+        music = Music.query.filter_by(music_id=item.usid).first()
+        song['id'] = music.id
+        song['music'] = music.name
+        song['artist'] = music.singer
+
+        #收藏表中的信息
+        collect = Collect.query.filter_by(cuid=item.uuid, csid=item.usid).first()
+        if collect is not None:
+            song['is_like'] = False
+        else:
+            song['is_like'] = True
+
+        #评论表中的信息
+        song['comments'] = []
+
+        #用户表中的信息
+        user_info = {}
+        user = User.query.filter_by(id=item.uuid).first()
+        user_info['id'] = user.id
+        user_info['avatar'] = user.avatar
+        user_info['username'] = user.username
+        user_info['twees'] = user.tweets
+        user_info['is_following'] = user.is_following
+        user_info['cover'] = user.cover
+        user_info['bio'] = user.bio
+        song['user'] = user_info
+
+        songlist.append(song)
+
+    return songlist
+
+
 def get_singer_by_songmid(songmid):
     return  Music.query.filter_by(music_id=songmid).first().singer
 
@@ -54,6 +95,28 @@ def Auth(Authorization):
         else:
             state = 403             #密码错误
     return state
+
+@api.route('/<int:user_id>/music/', methods=['GET'])
+@cross_origin(origin="*")
+def get_index(user_id):
+    if request.method == 'GET':
+        rv = {}
+        Authorization = request.headers.get('Authorization')
+        state = Auth2(Authorization)
+        rv['state'] = state
+        rv['musics'] = []
+
+        # 获取自己上传的音乐列表
+        upload_list = Upload.query.filter_by(uuid=user_id).all()
+        rv['musics'] += get_song_list(upload_list)
+
+        # 获取自己关注的所有用户
+        following_list = Follow.query.filter_by(follower_id=user_id).all()
+        for follow in following_list:
+            f_upload_list = Upload.query.filter_by(uuid=follow.followed_id).all()
+            rv['musics'] += get_song_list(f_upload_list)
+
+        return json.dumps(rv)
 
 @api.route('/<int:user_id>/follower/', methods=['GET'])
 @cross_origin(origin="*")
