@@ -1,6 +1,7 @@
 # coding: utf-8
 from datetime import datetime
 from flask import render_template, session, redirect, url_for, request
+from flask_cors import cross_origin
 
 from . import api
 from iMusic import db
@@ -53,13 +54,13 @@ def get_token():
 def register():
     rv = {}
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.json.get('username')
+        password = request.json.get('password')
         encode_password = base64.b64encode(username + ':' + password)
 
         #查询该用户名是否已经存在
         user = User.query.filter_by(username=username).first()
-        print user
+        print(user)
         if user is None:
             new = User(username=username, password=encode_password, follower_num=0, follower_list='[]', followed_num=0,
                        followed_list='[]')
