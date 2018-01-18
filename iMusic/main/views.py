@@ -110,6 +110,7 @@ def get_index(user_id):
         upload_list = Upload.query.filter_by(uuid=user_id).all()
         rv['musics'] += get_song_list(upload_list)
         rv['tweets_cnt'] = len(upload_list)
+	print rv['tweets_cnt']
         # 获取自己关注的所有用户
         following_list = Follow.query.filter_by(follower_id=user_id).all()
         for follow in following_list:
@@ -180,6 +181,10 @@ def follow():
 
         cname = request.json.get("cname")
         uname = request.json.get("uname")
+	
+	print cname
+	print uname
+	
         # 当前用户对象
         # 被关注用户对象
         c_user = User.query.filter_by(username=cname).first()
@@ -434,15 +439,23 @@ def get_user_info(id):
     rv = {}
     if request.method == 'GET':
         Authorization = request.headers.get('Authorization')
-        state = Auth(Authorization)
+        state = Auth2(Authorization)
         rv['state'] = state
         rv['user'] = {}
+
+        # 获取自己上传的音乐列表
+        upload_list = Upload.query.filter_by(uuid=id).all()
+	up_list = []
+	for x in upload_list:
+            up_list.append(x.usid)
+	
 
         if state == 200:
             user_info = User.query.filter_by(id=id).first()
             rv['user']['avatar']        = user_info.avatar
             rv['user']['username']      = user_info.username
-            rv['user']['tweets']        = list(user_info.tweets)
+            rv['user']['tweets']        = up_list
+            rv['user']['tweets_count'] 	= len(upload_list)
             rv['user']['is_following'] = user_info.is_following
             rv['user']['cover']         = user_info.cover
             rv['user']['bio']           = user_info.bio
