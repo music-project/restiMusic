@@ -49,20 +49,21 @@ def upload_music(uid):
         rv['comments'] = []
         rv['id'] = 0
         rv['is_like'] = False
-        rv['timestamp'] = datetime.datetime.now()
+        rv['timestamp'] = datetime.datetime.now().__str__()
 
         #根据歌曲名查找歌曲列表
         info = eval(_search('1', music))
         val = {}
         val['song'] = info['data']['song']
-        with open("temp1.txt", "wb") as f:
-            f.write(str(val))
+        # with open("temp3.txt", "wb") as f:
+        #     f.write(str(val))
         #根据歌手筛选歌曲列表
         songmid = ""
         flag = False
         for song in val['song']['list']:
             if song['singer'][0]['name'].decode('utf-8') == artist:
                 songmid = song['songmid']
+                # print "*********" + songmid
                 flag = True
                 break
         if flag == False:           #找不到匹配的结果
@@ -92,17 +93,22 @@ def upload_music(uid):
             ##根据歌曲ID查找歌曲专辑ID
             print "songmid = " + songmid
             info = eval(_songdetail(songmid))
-            with open("temp2.txt", "wb") as f:
-                f.write(str(info))
-            albummid    = info['data'][0]['album']['mid']
+            # with open("temp2.txt", "wb") as f:
+            #     f.write(str(info))
+            albummid    = info['data'][0]['album']['mid'].decode('utf-8')
 
             ##根据专辑ID查找专辑详情
             info = eval(_albumdetail(albummid))
             style       = info['data']['genre']
-            year        = info['data']['aDate']
+            year        = info['data']['aDate'].decode("utf-8")
             language    = info['data']['lan']
 
-            new_music = Music(music_id=songmid, album_id=albummid, name=music, style=style, year=year, language=language)
+            new_music = Music(music_id=songmid.decode('utf-8'),
+                              album_id=albummid.decode('utf-8'),
+                              name=music,
+                              style=style.decode('utf-8'),
+                              year=year,
+                              language=language.decode('utf-8'))
             db.session.add(new_music)
             db.session.commit()
 

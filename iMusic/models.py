@@ -11,7 +11,7 @@ class Music(db.Model):
     album_id        = db.Column(db.String(20))                      #歌曲所在专辑ID
     name            = db.Column(db.String(20))                      #歌曲名字
     style           = db.Column(db.String(50))                      #歌曲流派
-    year            = db.Column(db.Date)                            #歌曲年代
+    year            = db.Column(db.String(20))                      #歌曲年代
     singer          = db.Column(db.String(20))                      #歌手
     language        = db.Column(db.String(20))                      #语种
 
