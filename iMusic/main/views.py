@@ -8,6 +8,7 @@ from iMusic import db
 from ..spider.qqmusic import _songdetail
 from ..spider.qqmusic import _albumdetail
 from ..spider.qqmusic import _search
+from ..algorithm.recommender import recommender
 
 import json, base64, datetime
 from ..models import User, Upload, Collect, Comment, Music
@@ -50,6 +51,24 @@ def Auth(Authorization):
         else:
             state = 403             #密码错误
     return state
+
+@api.route('/<uid>/suggest_users/', methods=['GET'])
+@cross_origin(origin="*")
+def suggest(uid):
+
+    path = "temp.csv"
+    with open(path, "wb") as f:
+        f.write("UserID,MusicID,Rating\n")
+        collect = Collect.query.all()
+        for item in collect:
+            uuid  = str(item.cuid)
+            songid = item.csid
+            sstr = uuid + "," + songid + "," +  "5\n"
+            f.write(sstr)
+    rec = recommender(path)
+    # test
+    return rec.calcuteUserbyMusic(targetID=uid, TopN=4)
+
 
 @api.route('/<uid>/music/', methods=['POST'])
 @cross_origin(origin="*")
@@ -360,6 +379,26 @@ def albumdetail():
 @api.route('/dbtest/', methods=['GET'])
 @cross_origin(orifin="*")
 def dbtest():
-    user = User.query.filter_by(follower_num=0).all()
-    print user[0].id
+    new1 = Collect(cuid="1", csid="aaa", ctime=datetime.datetime.now().__str__())
+    new2 = Collect(cuid="2", csid="bbb", ctime=datetime.datetime.now().__str__())
+    new3 = Collect(cuid="3", csid="ccc", ctime=datetime.datetime.now().__str__())
+    new4 = Collect(cuid="4", csid="ddd", ctime=datetime.datetime.now().__str__())
+
+    db.session.add(new1)
+    db.session.add(new2)
+    db.session.add(new3)
+    db.session.add(new4)
+
+    db.session.commit()
+
+
+    # user = User.query.filter_by(follower_num=0).all()
+    # print user[0].id
     return 'just test'
+#
+# class Collect(db.Model):
+#     __tablename__   = 'collect_info'
+#     id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
+#     cuid        = db.Column(db.Integer, nullable=False)                      #收藏者用户ID
+#     csid        = db.Column(db.String(20), nullable=False)                      #被收藏的歌曲ID
+#     ctime       = db.Column(db.DateTime, nullable=False)                        #收藏时间

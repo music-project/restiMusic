@@ -23,7 +23,7 @@ class Comment(db.Model):
     id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
     commened_id     = db.Column(db.String(20), nullable=False)                      #被评论歌曲ID
     commening_id    = db.Column(db.String(20), nullable=False, index=True)          #评论人ID
-    time            = db.Column(db.DateTime, nullable=False)                        #评论时间
+    time            = db.Column(db.String(40), nullable=False)                        #评论时间
     comment_info    = db.Column(db.String(512))                                     #评论内容
 
     def __repr__(self):
@@ -51,9 +51,9 @@ class User(db.Model):
 class Upload(db.Model):
     __tablename__   = 'upload_info'
     id             = db.Column(db.Integer, primary_key=True, index=True)            #数据库id
-    uuid            = db.Column(db.String(20), nullable=False)                      #上传者用户ID
+    uuid            = db.Column(db.Integer, nullable=False)                      #上传者用户ID
     usid            = db.Column(db.String(20), nullable=False)                      #被上传的歌曲ID
-    utime           = db.Column(db.DateTime, nullable=False)                        #上传时间
+    utime           = db.Column(db.String(40), nullable=False)                        #上传时间
 
     def __repr__(self):
         return '<upload_id %r>' % self.id
@@ -61,9 +61,9 @@ class Upload(db.Model):
 class Collect(db.Model):
     __tablename__   = 'collect_info'
     id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
-    cuid        = db.Column(db.String(20), nullable=False)                      #收藏者用户ID
+    cuid        = db.Column(db.Integer, nullable=False)                      #收藏者用户ID
     csid        = db.Column(db.String(20), nullable=False)                      #被收藏的歌曲ID
-    ctime       = db.Column(db.DateTime, nullable=False)                        #收藏时间
+    ctime       = db.Column(db.String(40), nullable=False)                        #收藏时间
 
     def __repr__(self):
         return '<collect_info %r>' % self.id
