@@ -9,8 +9,8 @@ from ..spider.qqmusic import _songdetail
 from ..spider.qqmusic import _albumdetail
 from ..spider.qqmusic import _search
 
-import json, base64
-from ..models import User, Upload, Collect
+import json, base64, datetime
+from ..models import User, Upload, Collect, Comment, Music
 from flask_cors import cross_origin
 
 def Auth(Authorization):
@@ -33,6 +33,83 @@ def Auth(Authorization):
             state = 403             #密码错误
     return state
 
+@api.route('/<uid>/music/', methods=['POST'])
+@cross_origin(origin="*")
+def upload_music(uid):
+    rv = {}
+    if request.method == 'POST':
+        #身份验证
+        Authorization = request.headers.get('Authorization')
+        state = Auth(Authorization)
+        music = request.args.get('music')
+        artist = request.args.get('artist')
+
+        rv['state'] = state
+        rv['url'] = ""
+        rv['comments'] = []
+        rv['id'] = 0
+        rv['is_like'] = False
+        rv['timestamp'] = datetime.datetime.now()
+
+        #根据歌曲名查找歌曲列表
+        info = eval(_search('1', music))
+        val = {}
+        val['song'] = info['data']['song']
+        with open("temp1.txt", "wb") as f:
+            f.write(str(val))
+        #根据歌手筛选歌曲列表
+        songmid = ""
+        flag = False
+        for song in val['song']['list']:
+            if song['singer'][0]['name'].decode('utf-8') == artist:
+                songmid = song['songmid']
+                flag = True
+                break
+        if flag == False:           #找不到匹配的结果
+            rv['state'] = 404
+            return json.dumps(rv)
+        else:                       #根据歌曲ID查找播放链接
+            rv['url'] = 'http://ws.stream.qqmusic.qq.com/C100' + songmid + '.m4a?fromtag=38'
+
+            item = Collect.query.filter_by(csid=songmid, cuid=uid).first()
+            if item is None:
+                rv['is_like'] = False
+            else:
+                rv['is_like'] = True
+
+            comment = Comment.query.filter_by(commened_id=songmid).all()
+            for item in comment:
+                rv['comments'].add(item)
+
+            date = datetime.datetime.now()
+            #更新上传表
+            upload = Upload(uuid=uid, usid=songmid, utime=date)
+            db.session.add(upload)
+            db.session.commit()
+            rv['timestamp'] = date
+
+            #更新歌曲表
+            ##根据歌曲ID查找歌曲专辑ID
+            print "songmid = " + songmid
+            info = eval(_songdetail(songmid))
+            with open("temp2.txt", "wb") as f:
+                f.write(str(info))
+            albummid    = info['data'][0]['album']['mid']
+
+            ##根据专辑ID查找专辑详情
+            info = eval(_albumdetail(albummid))
+            style       = info['data']['genre']
+            year        = info['data']['aDate']
+            language    = info['data']['lan']
+
+            new_music = Music(music_id=songmid, album_id=albummid, name=music, style=style, year=year, language=language)
+            db.session.add(new_music)
+            db.session.commit()
+
+            mid = Music.query.filter_by(music_id=songmid).first().id
+            rv['id'] = mid
+
+            return json.dumps(rv)
 
 @api.route('/user/<int:id>', methods=['GET'])
 @cross_origin(origin="*")

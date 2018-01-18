@@ -6,8 +6,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Music(db.Model):
     __tablename__   = 'music_info'
-    id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
-    music_id        = db.Column(db.String(20), primary_key=True)   #歌曲mID
+    id             = db.Column(db.Integer, primary_key=True, index=True, autoincrement=True)        #数据库id
+    music_id        = db.Column(db.String(20))   #歌曲mID
     album_id        = db.Column(db.String(20))                      #歌曲所在专辑ID
     name            = db.Column(db.String(20))                      #歌曲名字
     style           = db.Column(db.String(50))                      #歌曲流派
@@ -50,7 +50,7 @@ class User(db.Model):
 
 class Upload(db.Model):
     __tablename__   = 'upload_info'
-    id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
+    id             = db.Column(db.Integer, primary_key=True, index=True)            #数据库id
     uuid            = db.Column(db.String(20), nullable=False)                      #上传者用户ID
     usid            = db.Column(db.String(20), nullable=False)                      #被上传的歌曲ID
     utime           = db.Column(db.DateTime, nullable=False)                        #上传时间
@@ -71,3 +71,6 @@ class Collect(db.Model):
 # python manage.py db init
 # python manage.py db migrate
 # python manage.py db upgrade
+
+
+# autoincrement=True
