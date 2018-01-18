@@ -105,7 +105,7 @@ def upload_music(uid):
             upload = Upload(uuid=uid, usid=songmid, utime=date)
             db.session.add(upload)
             db.session.commit()
-            rv['timestamp'] = date
+            rv['timestamp'] = date.__str__()
 
             #更新歌曲表
             ##根据歌曲ID查找歌曲专辑ID
@@ -116,6 +116,7 @@ def upload_music(uid):
             albummid    = info['data'][0]['album']['mid'].decode('utf-8')
 
             ##根据专辑ID查找专辑详情
+            print(_albumdetail(albummid))
             info = eval(_albumdetail(albummid))
             style       = info['data']['genre']
             year        = info['data']['aDate'].decode("utf-8")
@@ -153,6 +154,7 @@ def get_user_info(id):
             rv['user']['is_following'] = user_info.is_following
             rv['user']['cover']         = user_info.cover
             rv['user']['bio']           = user_info.bio
+            rv['user']['id']            = id
 
         return json.dumps(rv)
 
