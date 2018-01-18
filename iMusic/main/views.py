@@ -34,7 +34,7 @@ def Auth(Authorization):
     return state
 
 
-@api.route('/user/<int:id>', methods=['GET'])
+@api.route('/user/<int:id>/', methods=['GET'])
 @cross_origin(origin="*")
 def get_user_info(id):
     rv = {}
