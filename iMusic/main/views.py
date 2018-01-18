@@ -10,20 +10,42 @@ from ..spider.qqmusic import _albumdetail
 from ..spider.qqmusic import _search
 
 import json, base64
-# from .forms import NameForm
 from ..models import User, Upload, Collect
+from flask_cors import cross_origin
+
 from itsdangerous import URLSafeSerializer as Serializer
 
+@api.route('/following/music/', methods=['GET'])
+@cross_origin(origin="*")
+def following_music():
+    if request.method == 'GET':
+        # rv =
+        return 'test'
+
 @api.route('/login/', methods=['GET', 'POST'])
+@cross_origin(origin="*")
 def login():
     if request.method == 'POST':
-        # user = User.query.filter_by(email=form.email.data).first()
-        # if user is not None and user.verify_password(form.password.data) and \
-        #         user.is_administrator():
-        #     login_user(user)
-        #     return redirect(url_for('admin.index'))
-    # return
-        pass
+        rv = {}
+        token = request.headers.get('token')
+        username, password = base64.b64decode(token).split(':')
+        print username
+        print password
+
+        #查询是否有该用户
+        user = User.query.filter_by(username=username).first()
+        print user
+        if user is None:
+            rv['state'] = 401
+        else:       #查询密码是否正确
+            dbpassword = User.query.filter_by(username=username).first().password
+            print dbpassword
+            if dbpassword == token:
+                rv['state'] = 200
+            else:
+                rv['state'] = 403
+    rv['token'] = token
+    return json.dumps(rv)
 
 @api.route('/user/', methods=['POST'])
 @cross_origin(origin="*")
@@ -49,6 +71,7 @@ def register():
     return json.dumps(rv)
 
 @api.route('/', methods=['GET', 'POST'])
+@cross_origin(origin="*")
 def index():
     """
     form = NameForm()
@@ -75,11 +98,13 @@ def index():
     #     print "new user <{name}> created".format(name)
 
 @api.route('/test/', methods=['GET', 'POST'])
+@cross_origin(origin="*")
 def test():
     teststr = {'test': 'test'}
     return json.dumps(teststr)
 
 @api.route('/search/', methods=['POST'])
+@cross_origin(origin="*")
 def searchsong():
     """
     :function:  searchsong
@@ -109,6 +134,7 @@ def searchsong():
         return json.dumps(val)
 
 @api.route('/play/', methods=['POST'])
+@cross_origin(origin="*")
 def getm4a():
     """
     :function:  getm4a
@@ -123,6 +149,7 @@ def getm4a():
     )
 
 @api.route('/songdetail/', methods=['POST'])
+@cross_origin(origin="*")
 def songdetail():
     """
     :function:  songsdetail
@@ -146,6 +173,7 @@ def songdetail():
     return json.dumps(val)
 
 @api.route('/api/albumdetail/', methods=['POST'])
+@cross_origin(origin="*")
 def albumdetail():
     """
     :function:  albumdetail
