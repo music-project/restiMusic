@@ -9,17 +9,20 @@ from ..spider.qqmusic import _albumdetail
 from ..spider.qqmusic import _search
 
 import json, base64
-# from .forms import NameForm
 from ..models import User, Upload, Collect
+from flask_cors import cross_origin
+
 from itsdangerous import URLSafeSerializer as Serializer
 
 @api.route('/following/music/', methods=['GET'])
+@cross_origin(origin="*")
 def following_music():
     if request.method == 'GET':
         # rv =
         return 'test'
 
 @api.route('/login/', methods=['GET', 'POST'])
+@cross_origin(origin="*")
 def login():
     if request.method == 'POST':
         rv = {}
@@ -44,6 +47,7 @@ def login():
     return json.dumps(rv)
 
 @api.route('/user/', methods=['POST'])
+@cross_origin(origin="*")
 def register():
     rv = {}
     if request.method == 'POST':
@@ -66,6 +70,7 @@ def register():
     return json.dumps(rv)
 
 @api.route('/', methods=['GET', 'POST'])
+@cross_origin(origin="*")
 def index():
     """
     form = NameForm()
@@ -92,11 +97,13 @@ def index():
     #     print "new user <{name}> created".format(name)
 
 @api.route('/test/', methods=['GET', 'POST'])
+@cross_origin(origin="*")
 def test():
     teststr = {'test': 'test'}
     return json.dumps(teststr)
 
 @api.route('/search/', methods=['POST'])
+@cross_origin(origin="*")
 def searchsong():
     """
     :function:  searchsong
@@ -126,6 +133,7 @@ def searchsong():
         return json.dumps(val)
 
 @api.route('/play/', methods=['POST'])
+@cross_origin(origin="*")
 def getm4a():
     """
     :function:  getm4a
@@ -140,6 +148,7 @@ def getm4a():
     )
 
 @api.route('/songdetail/', methods=['POST'])
+@cross_origin(origin="*")
 def songdetail():
     """
     :function:  songsdetail
@@ -163,6 +172,7 @@ def songdetail():
     return json.dumps(val)
 
 @api.route('/api/albumdetail/', methods=['POST'])
+@cross_origin(origin="*")
 def albumdetail():
     """
     :function:  albumdetail
