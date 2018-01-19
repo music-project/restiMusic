@@ -14,7 +14,9 @@ import codecs
 import json, base64, datetime
 from ..models import User, Upload, Collect, Comment, Music, Follow
 from flask_cors import cross_origin
-
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 def get_song_list(upload_list):
     songlist = []
@@ -233,30 +235,154 @@ def like_music(mid):
 @api.route('/<int:uid>/suggest_users/', methods=['GET'])
 @cross_origin(origin="*")
 def suggest(uid):
-    if request.method == 'GET':
+    # if request.method == 'GET':
+    #     rv = {}
+    #     Authorization = request.headers.get('Authorization')
+    #     state = Auth2(Authorization)
+    #     rv['state'] = state
+    #     rv['user'] = []
+    #
+    #     #计算所有用户数
+    #     user_num = len(User.query.all())
+    #     # print "user_num = " + str(user_num)
+    #     sug = []
+    #     x = 1
+    #     for time in xrange(100):
+    #         y = (x + 3) % (user_num - 1) + 1
+    #         x = y
+    #         if Follow.query.filter_by(follower_id=uid, followed_id=y).first() is None:
+    #             if y not in sug:
+    #                 if y != uid:
+    #                     print y, uid
+    #                     sug.append(y)
+    #
+    #     sug = sug[0:4]
+    #     print sug
+    #     for id in sug:
+    #         if id != uid:
+    #             user = User.query.filter_by(id=id).first()
+    #             user_info = {}
+    #             user_info['id'] = user.id
+    #             user_info['avatar'] = user.avatar
+    #             user_info['username'] = user.username
+    #             user_info['tweets'] = list(user.tweets)
+    #             user_info['is_following'] = user.is_following
+    #             user_info['cover'] = user.cover
+    #             user_info['bio'] = user.bio
+    #             rv['user'].append(user_info)
+    #
+    # return json.dumps(rv)
+        # 歌曲评分
+        path1 = "temp_music.csv"
+        path2 = "temp_musicion.csv"
+        path3 = "temp_tag.csv"
+        f1 = codecs.open(path1, "wb")
+        f2 = codecs.open(path2, "wb")
+        f3 = codecs.open(path3, "wb")
+
+        f1.write("UserID,MusicID,Rating\n")
+        f2.write("UserID,MusicID,Rating\n")
+        f3.write("UserID,TagID,Rating\n")
+
+        collect = Collect.query.all()
+        upload = Upload.query.all()
+        rating = {}
+        for item in collect:
+            uuid = item.cuid
+            songid = item.csid
+            sstr = str(uuid) + "," + songid + ",5\n"
+            f1.write(sstr)
+
+            style = ""
+            year = ""
+            language = ""
+            item = Music.query.filter_by(music_id=songid).first()
+            if item is not None:
+                singer = item.singer
+                sstr2 = str(uuid) + "," + singer + ",5\n"
+                f2.write(sstr2)
+
+                style = item.style
+                year = item.year
+                language = item.language
+
+            if uuid not in rating:
+                rating[uuid] = {}
+            if year not in rating[uuid]:
+                rating[uuid][year] = 0
+            if style not in rating[uuid]:
+                rating[uuid][style] = 0
+            if language not in rating[uuid]:
+                rating[uuid][language] = 0
+            rating[uuid][style] += 3
+            rating[uuid][year] += 3
+            rating[uuid][language] += 3
+
+
+        for item in upload:
+            uuid = item.uuid
+            songid = item.usid
+            sstr = str(uuid) + "," + songid + ",5\n"
+            f1.write(sstr)
+
+
+            style = ""
+            year = ""
+            language = ""
+            item = Music.query.filter_by(music_id=songid).first()
+            if item is not None:
+                singer = item.singer
+                sstr2 = str(uuid) + "," + singer + ",5\n"
+                f2.write(sstr2)
+
+                style = item.style
+                year = item.year
+                language = item.language
+
+            if uuid not in rating:
+                rating[uuid] = {}
+            if year not in rating[uuid]:
+                rating[uuid][year] = 0
+            if style not in rating[uuid]:
+                rating[uuid][style] = 0
+            if language not in rating[uuid]:
+                rating[uuid][language] = 0
+            rating[uuid][style] += 5
+            rating[uuid][year] += 5
+            rating[uuid][language] += 5
+
+        for uuid in rating:
+            for tag in rating[uuid]:
+                f3.write(str(uuid) + "," + str(tag) + "," + str(rating[uuid][tag]) + "\n")
+        f1.close()
+        f2.close()
+        f3.close()
+
+        rec1 = recommender(path1).calcuteUserbyMusic(targetID=uid, TopN=2)
+        rec2 = recommender(path2).calcuteUserbyMusic(targetID=uid, TopN=2)
+        rec3 = recommender(path3).calcuteUserbyTag(targetID=uid, TopN=2)
+        rexx = []
+        for item in rec1:
+            if item not in rexx:
+                rexx.append(item)
+        for item in rec2:
+            if item not in rexx:
+                rexx.append(item)
+        for item in rec3:
+            if item not in rexx:
+                rexx.append(item)
+
+        #print rec1
+        #print rec2
+        #print rec3
+        print rexx
         rv = {}
         Authorization = request.headers.get('Authorization')
         state = Auth2(Authorization)
         rv['state'] = state
         rv['user'] = []
 
-        #计算所有用户数
-        user_num = len(User.query.all())
-        # print "user_num = " + str(user_num)
-        sug = []
-        x = 1
-        for time in xrange(100):
-            y = (x + 3) % (user_num - 1) + 1
-            x = y
-            if Follow.query.filter_by(follower_id=uid, followed_id=y).first() is None:
-                if y not in sug:
-                    if y != uid:
-                        print y, uid
-                        sug.append(y)
-
-        sug = sug[0:4]
-        print sug
-        for id in sug:
+        for id in rexx:
             if id != uid:
                 user = User.query.filter_by(id=id).first()
                 user_info = {}
@@ -268,120 +394,9 @@ def suggest(uid):
                 user_info['cover'] = user.cover
                 user_info['bio'] = user.bio
                 rv['user'].append(user_info)
+        return json.dumps(rv)
 
-    return json.dumps(rv)
-        # # 歌曲评分
-        # path1 = "temp_music.csv"
-        # path2 = "temp_musicion.csv"
-        # path3 = "temp_tag.csv"
-        # f1 = codecs.open(path1, "wb", 'utf8')
-        # f2 = codecs.open(path2, "wb", 'utf8')
-        # f3 = codecs.open(path3, "wb", 'utf8')
-        #
-        # f1.write("UserID,MusicID,Rating\n")
-        # f2.write("UserID,MusicID,Rating\n")
-        # f1.write("UserID,TagID,Rating\n")
-        #
-        # collect = Collect.query.all()
-        # upload = Upload.query.all()
-        # rating = {}
-        # for item in collect:
-        #     uuid = item.cuid
-        #     songid = item.csid
-        #     sstr = str(uuid) + "," + songid + ",5\n"
-        #     f1.write(sstr)
-        #
-        #     style = ""
-        #     year = ""
-        #     language = ""
-        #     item = Music.query.filter_by(music_id=songid).first()
-        #     if item is not None:
-        #         singer = item.singer
-        #         sstr2 = str(uuid) + "," + singer + ",5\n"
-        #         f2.write(sstr2)
-        #
-        #         style = item.style
-        #         year = item.year
-        #         language = item.language
-        #
-        #     if uuid not in rating:
-        #         rating[uuid] = {}
-        #     if year not in rating[uuid]:
-        #         rating[uuid][year] = 0
-        #     if style not in rating[uuid]:
-        #         rating[uuid][style] = 0
-        #     if language not in rating[uuid]:
-        #         rating[uuid][language] = 0
-        #     rating[uuid][style] += 3
-        #     rating[uuid][year] += 3
-        #     rating[uuid][language] += 3
-        #
-        #
-        # for item in upload:
-        #     uuid = item.uuid
-        #     songid = item.usid
-        #     sstr = str(uuid) + "," + songid + ",5\n"
-        #     f1.write(sstr)
-        #
-        #
-        #     style = ""
-        #     year = ""
-        #     language = ""
-        #     item = Music.query.filter_by(music_id=songid).first()
-        #     if item is not None:
-        #         singer = item.singer
-        #         sstr2 = str(uuid) + "," + singer + ",5\n"
-        #         f2.write(sstr2)
-        #
-        #         style = item.style.decode('utf-8')
-        #         year = item.year.decode('utf-8')
-        #         language = item.language.decode('utf-8')
-        #
-        #     if uuid not in rating:
-        #         rating[uuid] = {}
-        #     if year not in rating[uuid]:
-        #         rating[uuid][year] = 0
-        #     if style not in rating[uuid]:
-        #         rating[uuid][style] = 0
-        #     if language not in rating[uuid]:
-        #         rating[uuid][language] = 0
-        #     rating[uuid][style] += 5
-        #     rating[uuid][year] += 5
-        #     rating[uuid][language] += 5
-        #
-        # for uuid in rating:
-        #     for tag in rating[uuid]:
-        #         f3.write(str(uuid) + "," + str(tag) + "," + str(rating[uuid][tag]) + "\n")
-        # f1.close()
-        # f2.close()
-        # f3.close()
-        #
-        # rec1 = recommender(path1).calcuteUserbyMusic(targetID=uid, TopN=2)
-        # rec2 = recommender(path2).calcuteUserbyMusic(targetID=uid, TopN=2)
-        # rec3 = recommender(path3).calcuteUserbyTag(targetID=uid, TopN=2)
-        #
-        # print rec1 + rec2 + rec3
-        # return "suggest"
-
-# @api.route('/<uid>/suggest_users/', methods=['GET'])
-# @cross_origin(origin="*")
-# def suggest_user(uid):
-#     if request.method == 'GET':
-#         path = "temp.csv"
-#         with open(path, "wb") as f:
-#             f.write("UserID,MusicID,Rating\n")
-#             collect = Collect.query.all()
-#             for item in collect:
-#                 uuid  = str(item.cuid)
-#                 songid = item.csid
-#                 sstr = uuid + "," + songid + "," +  "5\n"
-#                 f.write(sstr)
-#
-#         rec = recommender(path)
-#         print rec.calcuteUserbyMusic(targetID=uid, TopN=4)
-#         return "test"
-#     # return rec.calcuteUserbyMusic(targetID=uid, TopN=4)
-
+        #return "suggest"
 
 @api.route('/<uid>/music/', methods=['POST'])
 @cross_origin(origin="*")
@@ -704,6 +719,8 @@ def dbtest():
     new2 = Collect(cuid="2", csid="bbb", ctime=datetime.datetime.now())
     new3 = Collect(cuid="3", csid="ccc", ctime=datetime.datetime.now())
     new4 = Collect(cuid="4", csid="ddd", ctime=datetime.datetime.now())
+
+
 
     db.session.add(new1)
     db.session.add(new2)

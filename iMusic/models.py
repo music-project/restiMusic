@@ -31,17 +31,17 @@ class Comment(db.Model):
 
 class User(db.Model):
     __tablename__   = 'user_info'
-    id              = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
-    username        = db.Column(db.String(20), nullable=False, index=True)                      #用户昵称
+    id              = db.Column(db.Integer, primary_key=True, index=True)           #数据库id
+    username        = db.Column(db.String(20), nullable=False, index=True)          #用户昵称
     password        = db.Column(db.String(40), nullable=False)                      #用户密码
     avatar          = db.Column(db.String(50), default='https://pic3.zhimg.com/aadd7b895_xs.jpg')
-    tweets          = db.Column(db.String(2048), default='')                           #
-    is_following    = db.Column(db.Boolean)                                         #
+    tweets          = db.Column(db.String(2048), default='')
+    is_following    = db.Column(db.Boolean)
     cover           = db.Column(db.String, default='https://user-images.githubusercontent.com/10671733/3508799'
                                                    '4-14e705ce-fc6d-11e7-8203-bbd045c6a3bb.jpg')
     bio             = db.Column(db.String(200), default='intro yourself')         #用户介绍
     follower_num    = db.Column(db.Integer)                                          #关注数
-    followed_num    = db.Column(db.Integer)                                         #粉丝数
+    followed_num    = db.Column(db.Integer)                                          #粉丝数
 
 class Follow(db.Model):
     __tablename__ = 'follows'

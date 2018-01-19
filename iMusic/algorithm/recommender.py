@@ -47,6 +47,8 @@ class recommender(object):
         if unionLen == 0:
             return 0.0
         product = len(series1) * len(series2)
+        if product == 0:
+            return 0.0
         similarity = unionLen / math.sqrt(product)
         return similarity
 
