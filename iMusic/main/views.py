@@ -81,15 +81,13 @@ def Auth2(Authorization):
 def Auth(Authorization):
     state = 502
     username, password = base64.b64decode(Authorization.split(' ')[1]).split(':')
-    # print username
-    # print password
 
     # 查询是否有该用户
     user = User.query.filter_by(username=username).first()
     print user
     if user is None:
         state = 401                 #未注册
-    else:  # 查询密码是否正确
+    else:                           # 查询密码是否正确
         dbpassword = User.query.filter_by(username=username).first().password
         print dbpassword
         if dbpassword == base64.b64encode(username + ':' + password):
@@ -112,7 +110,7 @@ def get_index(user_id):
         upload_list = Upload.query.filter_by(uuid=user_id).all()
         rv['musics'] += get_song_list(upload_list)
         rv['tweets_cnt'] = len(upload_list)
-	print rv['tweets_cnt']
+        print rv['tweets_cnt']
         # 获取自己关注的所有用户
         following_list = Follow.query.filter_by(follower_id=user_id).all()
         for follow in following_list:
@@ -733,10 +731,3 @@ def dbtest():
     # user = User.query.filter_by(follower_num=0).all()
     # print user[0].id
     return 'just test'
-#
-# class Collect(db.Model):
-#     __tablename__   = 'collect_info'
-#     id             = db.Column(db.Integer, primary_key=True, index=True)        #数据库id
-#     cuid        = db.Column(db.Integer, nullable=False)                      #收藏者用户ID
-#     csid        = db.Column(db.String(20), nullable=False)                      #被收藏的歌曲ID
-#     ctime       = db.Column(db.DateTime, nullable=False)                        #收藏时间
